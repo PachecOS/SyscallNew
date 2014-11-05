@@ -10,7 +10,7 @@ struct lock lock;
 struct file_attr {
 	int fd;
 	struct file *file;
-	struct list_elem *elem;
+	struct list_elem elem;
 };
 
 #endif /* userprog/syscall.h */

@@ -94,7 +94,7 @@ thread_init (void)
   lock_init (&tid_lock);
   list_init (&ready_list);
   list_init (&all_list);
-  list_init(&files);
+  //list_init(&files);
   //list_init(&wait_resources_list);
 
 
@@ -176,6 +176,7 @@ thread_create (const char *name, int priority,
   struct switch_entry_frame *ef;
   struct switch_threads_frame *sf;
   tid_t tid;
+  enum intr_level old_level;
 
   ASSERT (function != NULL);
   
@@ -205,7 +206,7 @@ thread_create (const char *name, int priority,
   sf->eip = switch_entry;
   sf->ebp = 0;
   
-  //intr_set_level (old_level);
+  intr_set_level (old_level);
   //t->parent = thread_tid();
 
 

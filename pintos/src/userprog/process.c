@@ -49,6 +49,7 @@ process_execute (const char *file_name)
   start = malloc(sizeof(struct start_struct *));
   sema_init(start->start_synch, 0);
   start->fn_copy = (char *)fn_copy;
+  start->success == false;
   // Sema_down so no other threads runs while this one does
   sema_down(start->start_synch);
 
@@ -60,8 +61,9 @@ process_execute (const char *file_name)
 
     
   if (tid == TID_ERROR)
+  {
     palloc_free_page (fn_copy); 
-
+  }
   free(start);
   return tid;
 }
@@ -73,26 +75,26 @@ start_process (void *file_name_)
 {
   printf("Entering start process\n");
   struct start_struct *ss = file_name_;
+  //struct start_struct *ss;
   char *file_name = file_name_;
-  printf("The filename is %s\n", file_name);
   struct intr_frame if_;
+  char *parse_ptr;
 
+  parse_ptr = strtok_r(NULL, " ", &file_name);
   /* Initialize interrupt frame and load executable. */
   memset (&if_, 0, sizeof if_);
   if_.gs = if_.fs = if_.es = if_.ds = if_.ss = SEL_UDSEG;
   if_.cs = SEL_UCSEG;
   if_.eflags = FLAG_IF | FLAG_MBS;
   ss->success = load (file_name, &if_.eip, &if_.esp);
-  printf("The load was a success\n");
   /* If load failed, quit. */
   palloc_free_page (file_name);
   if (!ss->success)
   { 
     printf("i am doing a thread exit.\n");
+    sema_up(ss->start_synch);
     thread_exit ();
   }
-
-  sema_down(&ss->start_synch);
 
   char *token;
   char **argv = malloc((sizeof(char*) * 2));
@@ -103,13 +105,11 @@ start_process (void *file_name_)
 
   // Iterate each token
   for(token = (char*) file_name; token != NULL; 
-                                  token = strtok_r(NULL, " ", if_.esp))
+                                  token = strtok_r(NULL, " ", &parse_ptr))
   {
-    printf("This is the token: %s\n", token);
     if_.esp = if_.esp - (strlen(token) + 1);
     argv[argc] = if_.esp;
     argc++;
-    printf("The arg count is : %d\n", argc);
 
     // If the size of argc is greater than 2 bits
     if(argc >= bits)
@@ -126,14 +126,14 @@ start_process (void *file_name_)
   // Need to set the last arg to 0 before setting 
   // the arg array on the stack
   argv[argc] = 0;
-  // Align the word by 4 to get offset
-  word_align = (size_t ) if_.esp % 4;
-  if(word_align)
-  {
-    if_.esp -= word_align; // 4-word_align
-    memcpy(if_.esp, &argv[argc], word_align);
-  }
 
+  while(!(((uint32_t) if_.esp % 4) == 0))
+  {
+    word_align = -- if_.esp;
+    word_align = 0;
+  }
+  memcpy(if_.esp, &argv[argc], word_align);
+  
   /* Now we need to push on argv[n], argv[n-1]...argv[0] */
 
   for(i = argc-1; i >= 0; i--)
@@ -158,6 +158,7 @@ start_process (void *file_name_)
 
 
   free(argv);
+  sema_up(&ss->start_synch);
 
   /* Start the user process by simulating a return from an
      interrupt, implemented by intr_exit (in
@@ -199,7 +200,7 @@ process_wait (tid_t child_tid UNUSED)
     // wait_info_init(&w_info);
     // struct thread *t = thread_current();
     // struct list_elem *e;
-    // for(e = list_begin(t->resources_list); e!=list_end(t->resources_list)
+    // for(e = list_begin(t->wait_info_resources_list); e!=list_end(t->wait_info_resources_list)
     //               e=list_next(e))
     // {
     //   w_info = list_entry(e, struct wait_info, elem);

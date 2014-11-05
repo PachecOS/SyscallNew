@@ -261,7 +261,7 @@ open (const char *file)
 	t->fd++;
 
 	// Put the file elem on that thread's file list
-	list_push_back(t->files, fa->elem);
+	list_push_back(t->files, &fa->elem);
 	free(fa);
 	lock_release(&lock);
 	return fa->fd;
@@ -340,7 +340,7 @@ tell (int fd)
 {
 	lock_acquire(&lock);
 	struct file *f = get_file(fd);
-	off_t next;
+	int next = 0;
 	// Get the file attributed to this fd
 	if(f != NULL) 
 	{
@@ -365,13 +365,13 @@ close (int fd)
 		if(fa->fd == fd)
 		{
 			file_close(fa->file);
-			list_remove(fa->elem);
+			list_remove(&fa->elem);
 			free(fa);
 		}
 		if(fd == -1)
 		{
 			file_close(fa->file);
-			list_remove(fa->elem);
+			list_remove(&fa->elem);
 			free(fa);
 		}
 		else if(fd > -1)
