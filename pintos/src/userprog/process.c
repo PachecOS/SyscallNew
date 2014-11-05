@@ -33,6 +33,7 @@ static bool load (const char *cmdline, void (**eip) (void), void **esp);
 tid_t
 process_execute (const char *file_name) 
 {
+  printf("I am starting execute.\n");
   // Need to modify this method
   char *fn_copy;
   char *parse;
@@ -49,9 +50,7 @@ process_execute (const char *file_name)
   start = malloc(sizeof(struct start_struct *));
   sema_init(start->start_synch, 0);
   start->fn_copy = (char *)fn_copy;
-  start->success == false;
-  // Sema_down so no other threads runs while this one does
-  sema_down(start->start_synch);
+  start->success = false;
 
   // Parse by strings
   file = strtok_r((char *)file_name, " ", &parse);
@@ -59,7 +58,7 @@ process_execute (const char *file_name)
   /* Create a new thread to execute FILE_NAME. */
   tid = thread_create (file, PRI_DEFAULT, start_process, start);
 
-    
+  sema_down(start->start_synch);
   if (tid == TID_ERROR)
   {
     palloc_free_page (fn_copy); 
@@ -75,21 +74,26 @@ start_process (void *file_name_)
 {
   printf("Entering start process\n");
   struct start_struct *ss = file_name_;
-  //struct start_struct *ss;
-  char *file_name = file_name_;
   struct intr_frame if_;
   char *parse_ptr;
+  printf("The fn_copy: %s", ss->fn_copy);
+  printf("The success: %d\n", ss->success);
 
-  parse_ptr = strtok_r(NULL, " ", &file_name);
+  char *save_ptr = ss->fn_copy;
+  bool success = ss->success;
+
+
   /* Initialize interrupt frame and load executable. */
   memset (&if_, 0, sizeof if_);
   if_.gs = if_.fs = if_.es = if_.ds = if_.ss = SEL_UDSEG;
   if_.cs = SEL_UCSEG;
   if_.eflags = FLAG_IF | FLAG_MBS;
-  ss->success = load (file_name, &if_.eip, &if_.esp);
+  printf("Before load\n");
+  success = load (save_ptr, &if_.eip, &if_.esp);
+  printf("SUCCESSSSSS\n");
   /* If load failed, quit. */
-  palloc_free_page (file_name);
-  if (!ss->success)
+  palloc_free_page (save_ptr);
+  if (!success)
   { 
     printf("i am doing a thread exit.\n");
     sema_up(ss->start_synch);
@@ -100,11 +104,11 @@ start_process (void *file_name_)
   char **argv = malloc((sizeof(char*) * 2));
 
   int i, argc = 0; 
-  int word_align;
+  int word_align = 0;
   int bits = 2;
 
   // Iterate each token
-  for(token = (char*) file_name; token != NULL; 
+  for(token = (char*) save_ptr; token != NULL; 
                                   token = strtok_r(NULL, " ", &parse_ptr))
   {
     if_.esp = if_.esp - (strlen(token) + 1);
@@ -158,7 +162,7 @@ start_process (void *file_name_)
 
 
   free(argv);
-  sema_up(&ss->start_synch);
+  sema_up(ss->start_synch);
 
   /* Start the user process by simulating a return from an
      interrupt, implemented by intr_exit (in
