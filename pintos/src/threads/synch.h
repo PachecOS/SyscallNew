@@ -42,19 +42,31 @@ void cond_wait (struct condition *, struct lock *);
 void cond_signal (struct condition *, struct lock *);
 void cond_broadcast (struct condition *, struct lock *);
 
+<<<<<<< HEAD
 // Monitor struct for System Calls 
+=======
+/* Monitor struct for System Calls 
+>>>>>>> 780be0ec81719880c2518fa76e8778be48fb5746
 struct wait_info 
 {
   struct lock mutex_lock;
   struct condition completed;
   int status;
+<<<<<<< HEAD
   //pid_t child_pid;
+=======
+  pid_t child_pid;
+>>>>>>> 780be0ec81719880c2518fa76e8778be48fb5746
   bool child_exit;
   bool parent_exit;
   bool parent_waiting_on_child;
 
 };
+<<<<<<< HEAD
 
+=======
+*/
+>>>>>>> 780be0ec81719880c2518fa76e8778be48fb5746
 
 /* Optimization barrier.
 

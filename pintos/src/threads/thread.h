@@ -101,6 +101,7 @@ struct thread
     /* Owned by thread.c. */
     unsigned magic;                     /* Detects stack overflow. */
 
+<<<<<<< HEAD
 
     tid_t parent;
     struct list lock;
@@ -114,6 +115,14 @@ struct thread
     // List of monitors for exit/wait synch
     struct list wait_info_resources_list;
     struct wait_info *w_info;   /* Process metadata */
+=======
+    struct child_p *cp;
+    struct list *children;
+    tid_t parent;
+    struct list *files;
+    int fd;
+    struct file *exec_file;
+>>>>>>> 780be0ec81719880c2518fa76e8778be48fb5746
 
   };
 

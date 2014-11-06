@@ -39,6 +39,8 @@ static struct list files;
 /* Lock used by allocate_tid(). */
 static struct lock tid_lock;
 
+static struct wait_info_list;
+
 /* Stack frame for kernel_thread(). */
 struct kernel_thread_frame 
   {
@@ -94,8 +96,12 @@ thread_init (void)
   lock_init (&tid_lock);
   list_init (&ready_list);
   list_init (&all_list);
+<<<<<<< HEAD
   //list_init(&files);
   //list_init(&wait_resources_list);
+=======
+  //list_init (&wait_info_list);
+>>>>>>> 780be0ec81719880c2518fa76e8778be48fb5746
 
 
   /* Set up a thread structure for the running thread. */
